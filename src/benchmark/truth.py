@@ -37,6 +37,33 @@ def _open(path: Path) -> xr.Dataset:
     return xr.open_dataset(path)
 
 
+def _normalize_era5(ds: xr.Dataset) -> xr.Dataset:
+    """Normalize the CDS netCDF convention onto the WB2/ERA5 convention.
+
+    The new CDS API returns short variable names (handled by
+    :func:`benchmark.ingest.canonicalize_variables`) plus a ``valid_time`` coordinate, a
+    ``pressure_level`` coordinate, and ``number``/``expver`` metadata coordinates. This
+    renames the time/level coordinates and drops the metadata so downstream code sees
+    ``time``/``level``/``lat``/``lon``. It is a no-op on data already in WB2 convention.
+    """
+    rename = {}
+    if "valid_time" in ds.coords:
+        rename["valid_time"] = "time"
+    if "pressure_level" in ds.coords:
+        rename["pressure_level"] = "level"
+    if rename:
+        ds = ds.rename(rename)
+
+    if "number" in ds.coords:
+        ds = ds.drop_vars("number")
+    if "expver" in ds.dims:
+        # Mixed ERA5T/final (expver=5/1): keep the final slice.
+        ds = ds.sel(expver=1, drop=True)
+    elif "expver" in ds.coords:
+        ds = ds.drop_vars("expver")
+    return ds
+
+
 def select_region(ds: xr.Dataset, region: dict[str, tuple[float, float]]) -> xr.Dataset:
     """Select the ``{"lat": (s, n), "lon": (w, e)}`` box (coords must already be ``lat``/``lon``)."""
     return ds.sel(
@@ -52,7 +79,7 @@ def load_truth(
     time_slice: Optional[slice] = None,
 ) -> xr.Dataset:
     """Load and normalize truth (ERA5/IFS) onto ``lat``/``lon`` with canonical variable names."""
-    ds = canonicalize_variables(normalize_spatial(_open(path)))
+    ds = canonicalize_variables(normalize_spatial(_normalize_era5(_open(path))))
     if region is not None:
         ds = select_region(ds, region)
     if time_slice is not None:
@@ -66,7 +93,7 @@ def load_climatology(
     path: Path | str, variables: Optional[list[str]] = None
 ) -> xr.Dataset:
     """Load a prebuilt climatology netCDF (see ``scripts/build_climatology.py``)."""
-    ds = canonicalize_variables(normalize_spatial(_open(path)))
+    ds = canonicalize_variables(normalize_spatial(_normalize_era5(_open(path))))
     if variables:
         ds = ds[[v for v in variables if v in ds]]
     return ds

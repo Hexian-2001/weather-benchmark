@@ -26,14 +26,19 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-# Aurora ``Batch`` short keys → WeatherBench 2 / ERA5 long names.
+# Short keys → WeatherBench 2 / ERA5 long names. Covers both Aurora ``Batch`` keys
+# (``2t``/``10u``/``10v``) and the new CDS netCDF short names (``t2m``/``u10``/``v10``/``sp``).
 VARIABLE_ALIASES: Dict[str, str] = {
     # surface
-    "2t": "2m_temperature",
-    "10u": "10m_u_component_of_wind",
-    "10v": "10m_v_component_of_wind",
+    "2t": "2m_temperature",                # Aurora Batch
+    "t2m": "2m_temperature",               # CDS ERA5 / ERA5-Land
+    "10u": "10m_u_component_of_wind",      # Aurora Batch
+    "u10": "10m_u_component_of_wind",      # CDS ERA5 / ERA5-Land
+    "10v": "10m_v_component_of_wind",      # Aurora Batch
+    "v10": "10m_v_component_of_wind",      # CDS ERA5 / ERA5-Land
     "msl": "mean_sea_level_pressure",
-    # atmospheric
+    "sp": "surface_pressure",              # CDS ERA5-Land (no MSLP)
+    # atmospheric (Aurora Batch and CDS ERA5 share these short names)
     "z": "geopotential",
     "t": "temperature",
     "u": "u_component_of_wind",

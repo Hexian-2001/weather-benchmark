@@ -45,3 +45,38 @@ def test_load_truth_normalizes_coords_and_folds_levels(tmp_path):
 def test_load_truth_filters_variables(tmp_path):
     ds = truth.load_truth(_era5_like(tmp_path), variables=["2m_temperature"])
     assert list(ds.data_vars) == ["2m_temperature"]
+
+
+def _cds_like(tmp_path):
+    """A new-CDS ERA5 netCDF: ``valid_time``/``pressure_level`` coords, short names, metadata."""
+    lat = np.linspace(55.0, 15.0, 5)
+    lon = np.linspace(70.0, 140.0, 8)
+    valid_time = pd.date_range("2024-01-01", periods=4, freq="6h").values
+    levels = [500, 850]
+    ds = xr.Dataset(
+        {
+            "t2m": (("valid_time", "latitude", "longitude"), np.ones((4, 5, 8))),
+            "z": (("valid_time", "pressure_level", "latitude", "longitude"),
+                  np.ones((4, 2, 5, 8))),
+        },
+        coords={
+            "valid_time": valid_time,
+            "pressure_level": levels,
+            "latitude": lat,
+            "longitude": lon,
+            "number": 0,
+            "expver": ("valid_time", np.ones(4, dtype=int)),
+        },
+    )
+    path = tmp_path / "era5_cds.nc"
+    ds.to_netcdf(path)
+    return path
+
+
+def test_load_truth_normalizes_cds_format(tmp_path):
+    ds = truth.load_truth(_cds_like(tmp_path))
+    assert "time" in ds.coords and "valid_time" not in ds.coords
+    assert "2m_temperature" in ds.data_vars and "t2m" not in ds.data_vars
+    assert "geopotential_500" in ds.data_vars
+    assert "level" not in ds.dims
+    assert "expver" not in ds.coords and "number" not in ds.coords

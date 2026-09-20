@@ -131,7 +131,7 @@ Two candidates (locked, 2026-09-18):
 
 **Locked**: **A primary (ERA5)**, B as the near-real-time quick-check channel. Truth is uniformly regridded to the 0.25° reference grid and cached, avoiding repeated downloads per score.
 
-> ⚠️ **0.1° truth (updated 2026-09-20)**: ERA5 is natively **0.25°** — there is no 0.1° ERA5 product. Since the current focus is scoring **0.1° 1h** downscaling predictions, the 0.1° truth is the **IFS HRES `fc0` analysis (~9 km ≈ 0.1°)** for all variables, with **ERA5-Land (0.1°)** as an optional surface-only (land) supplement. This elevates IFS HRES from "near-real-time check" to "primary truth for the 0.1° track".
+> ⚠️ **0.1° truth (corrected 2026-09-20)**: ERA5 is natively **0.25°** — there is no 0.1° ERA5 product. The only free 0.1° hourly product is **ERA5-Land (0.1°, surface-only)**; it carries 2m temperature / 10m wind / surface pressure but **no MSLP and no upper-air**. **IFS HRES `fc0`** (~9 km ≈ 0.1°) is the 0.1° upper-air candidate, but it is **not on the free CDS** (requires ECMWF MARS, licensed) and is produced **6-hourly** (00/06/12/18 UTC), so it cannot score 1-hourly predictions anyway. **Decision:** 0.1° surface truth = ERA5-Land; 0.1° upper-air truth is **deferred** (upper-air is scored at 0.25° ERA5 for now).
 
 ---
 
