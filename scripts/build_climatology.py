@@ -18,10 +18,15 @@ Notes:
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
-import numpy as np
 import xarray as xr
+
+# allow running this script standalone without installing the package
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from benchmark.climatology import build_daily_climatology  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -38,26 +43,16 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    start, end = args.period
     print(f"[climatology] reading ERA5: {args.era5}")
 
     ds = xr.open_zarr(args.era5) if str(args.era5).endswith(".zarr") else xr.open_dataset(args.era5)
 
-    # select years + region + variables
-    ds = ds.sel(time=slice(f"{start}-01-01", f"{end}-12-31"))
+    # select region here; the module handles year/variable selection and the reduction
     ds = ds.sel(lat=slice(*sorted(args.lat)), lon=slice(*sorted(args.lon)))
-    ds = ds[[v for v in args.variables if v in ds]]
 
-    # daily climatology: daily mean first, then multi-year mean per day-of-year
-    daily = ds.resample(time="1D").mean("time")
-    doy = daily["time.dayofyear"]
-    climatology = daily.groupby(doy).mean("time")
-
-    # fold leap day 2/29 into day 60, keeping 365 days
-    climatology = climatology.sel(dayofyear=climatology.dayofyear != 366)
-
-    if args.smooth and args.smooth > 1:
-        climatology = climatology.rolling(dayofyear=args.smooth, center=True, min_periods=1).mean()
+    climatology = build_daily_climatology(
+        ds, period=tuple(args.period), variables=args.variables, smooth=args.smooth
+    )
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     climatology.to_netcdf(args.out)

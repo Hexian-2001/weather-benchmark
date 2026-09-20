@@ -16,6 +16,8 @@ from pathlib import Path
 
 from . import __version__
 from . import config as config_mod
+from . import ingest
+from . import pipeline
 from . import registry
 
 
@@ -43,21 +45,39 @@ def cmd_register(args: argparse.Namespace) -> int:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    # Phase 1: check truth coverage and prediction completeness
-    print(f"verify {args.model_id}: not implemented yet (Phase 1).")
-    return 2
+    cfg = config_mod.load_config(args.config)
+    years = cfg["years"]["test"]
+    try:
+        pred = ingest.load_predictions(args.model_id, years, cfg["storage"])
+    except FileNotFoundError as exc:
+        print(f"[REJECTED] {exc}")
+        return 1
+    issues = pipeline.validate_predictions(pred, cfg)
+    if issues:
+        for issue in issues:
+            print(f"  - {issue}")
+        print("\n[REJECTED] prediction completeness check failed.")
+        return 1
+    print(f"[OK] predictions cover {years} — init times and lead times complete.")
+    return 0
 
 
 def cmd_reforecast(args: argparse.Namespace) -> int:
-    # Phase 1: orchestrate historical-initial-condition reruns (Slurm)
-    print(f"reforecast {args.model_id} --years {args.years}: not implemented yet (Phase 1).")
+    # Phase 1: orchestrate historical-initial-condition reruns (Slurm, on Pawsey)
+    print(f"reforecast {args.model_id} --years {args.years}: not implemented yet (Phase 1, Slurm).")
     return 2
 
 
 def cmd_score(args: argparse.Namespace) -> int:
-    # Phase 1: ingest → regrid → metrics → write
-    print(f"score {args.model_id}: not implemented yet (Phase 1).")
-    return 2
+    cfg = config_mod.load_config(args.config)
+    version = args.version or "1.0.0"
+    try:
+        out_dir = pipeline.score_model(args.model_id, version, cfg)
+    except FileNotFoundError as exc:
+        print(f"[REJECTED] {exc}")
+        return 1
+    print(f"[OK] scored {args.model_id} (version {version}) → {out_dir}")
+    return 0
 
 
 def cmd_report(args: argparse.Namespace) -> int:
@@ -82,15 +102,19 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_ver = sub.add_parser("verify", help="check truth coverage & prediction completeness")
     p_ver.add_argument("model_id")
+    p_ver.add_argument("--config", type=Path, default=None, help="path to benchmark.yaml")
     p_ver.set_defaults(func=cmd_verify)
 
     p_ref = sub.add_parser("reforecast", help="orchestrate historical-initial-condition reruns")
     p_ref.add_argument("model_id")
     p_ref.add_argument("--years", default="2023-2025")
+    p_ref.add_argument("--config", type=Path, default=None, help="path to benchmark.yaml")
     p_ref.set_defaults(func=cmd_reforecast)
 
     p_score = sub.add_parser("score", help="score a model")
     p_score.add_argument("model_id")
+    p_score.add_argument("--version", default=None, help="score version (default 1.0.0)")
+    p_score.add_argument("--config", type=Path, default=None, help="path to benchmark.yaml")
     p_score.set_defaults(func=cmd_score)
 
     p_rep = sub.add_parser("report", help="rebuild leaderboard + report")

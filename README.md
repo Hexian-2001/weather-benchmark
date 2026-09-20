@@ -30,7 +30,7 @@ A standardized, reusable, auditable benchmark for internal weather ML model iter
 | **Register = compliant** | The model card is the entry ticket: missing fields or an unseen-year violation rejects the model |
 | **Immutable archive** | Each result is written atomically under `model_id + version + config`, never overwriting history |
 | **Reusable** | Adding a model = one card + one command; no changes to the scoring code |
-| **Aligned with existing infra** | Reuses `foehn_core.prediction_store`'s unified format and `UNIFIED_MAP` variable names |
+| **Canonical format** | Defines a reforecast format aligned with WeatherBench 2 / ERA5 conventions; the reforecast step writes it, scoring reads it |
 
 ---
 
@@ -62,7 +62,7 @@ flowchart LR
 | Score | `benchmark score <model_id>` | ingest → regrid → metrics → write |
 | Report | `benchmark report` | rebuild leaderboard + generate report |
 
-**Key constraint**: scoring is a **pure function** `(predictions, truth, climatology, config) → metrics`, hence replayable; reforecast outputs go into the existing `results/<model>/<variant>/<init>Z/predictions/` without touching the live pipeline.
+**Key constraint**: scoring is a **pure function** `(predictions, truth, climatology, config) → metrics`, hence replayable; reforecast outputs go into `results/<model_id>/predictions/` in the canonical format, without touching the live pipeline.
 
 ---
 
@@ -99,11 +99,14 @@ weather-benchmark/
 │   ├── cli.py                         # CLI entry point
 │   ├── config.py                      # config load / hash / path resolution
 │   ├── registry.py                    # card schema + unseen-year compliance
-│   ├── ingest.py                      # data ingestion (prediction_store)
+│   ├── ingest.py                      # data ingestion (canonical reforecast format)
+│   ├── truth.py                       # truth / climatology loading
 │   ├── regrid.py                      # conservative regrid to 0.25°
 │   ├── climatology.py                 # 30-year climatology
 │   ├── metrics.py                     # lat-weighted RMSE/ACC/MAE/bias
 │   ├── score.py                       # pure scoring function
+│   ├── pipeline.py                    # ingest → align → score → archive orchestration
+│   ├── archive.py                     # immutable score archive
 │   └── report.py                      # leaderboard / report
 ├── scripts/build_climatology.py       # climatology builder
 └── docs/benchmark_plan.md             # full design document

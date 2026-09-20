@@ -19,7 +19,7 @@
 2. **Register = compliant**: the model card is the entry ticket; missing fields or an unseen-year violation rejects the model.
 3. **Immutable archive**: each result is written atomically under `model_id + version + config`, never overwriting history.
 4. **Reusable**: adding a model = one card + one command, no changes to the scoring code.
-5. **Aligned with existing infra**: reuses `foehn_core.prediction_store`'s unified format, no new wheel.
+5. **Canonical format**: the benchmark defines a reforecast format aligned with WeatherBench 2 / ERA5 conventions (same variable names, `latitude`/`longitude` coords); the reforecast step writes it, scoring reads it. (Earlier drafts assumed a `foehn_core.prediction_store` unified format — that does not exist on Pawsey, so the benchmark owns the format.)
 
 ---
 
@@ -40,7 +40,7 @@
 
 ### 3.1 Region
 
-The primary region reuses the existing `prediction_store` China box:
+The primary region is the China box:
 
 ```
 lat: 15.0 – 55.0°N
@@ -75,7 +75,7 @@ lon: 70.0 – 140.0°E
 
 ### 3.4 Variables
 
-Unified variable names (from the existing `UNIFIED_MAP`):
+Unified variable names (WeatherBench 2 / ERA5 long names, matching the Aurora ``Batch`` output):
 
 | Category | Variable | Note |
 |---|---|---|
@@ -142,7 +142,7 @@ Two candidates (locked, 2026-09-18):
 - **MAE**, **Bias (mean error)** — auxiliary, for systematic error
 - **Wind-vector RMSE** = sqrt(RMSE_u² + RMSE_v²) — wind speed / vector reported separately
 
-Latitude weight: `w(i) = (sinθᵢᵘ − sinθᵢˡ) / mean(sinθᵘ − sinθˡ)` (WeatherBench 2 definition).
+Latitude weight: `w(lat) = cos(lat) / mean(cos(lat))` (WeatherBench 2 convention).
 
 ### 6.2 Aggregation conventions
 

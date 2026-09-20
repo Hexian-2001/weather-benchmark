@@ -53,3 +53,25 @@ def config_hash(cfg: Dict[str, Any]) -> str:
 def start_year(cfg: Dict[str, Any]) -> int:
     """Evaluation start year (the hard unseen-year compliance threshold)."""
     return int(cfg["years"]["test"][0])
+
+
+def variables_from_config(cfg: Dict[str, Any]) -> list[str]:
+    """Canonical variable names to score (pressure levels folded into names).
+
+    ``variables.surface`` names are used as-is; ``variables.pressure`` entries of the form
+    ``{name, level}`` become ``"<name>_<level>"`` (e.g. ``geopotential_500``).
+    """
+    variables = cfg.get("variables", {})
+    names = list(variables.get("surface", []))
+    for entry in variables.get("pressure", []):
+        if isinstance(entry, dict):
+            names.append(f"{entry['name']}_{entry['level']}")
+        else:
+            names.append(entry)
+    return names
+
+
+def region_from_config(cfg: Dict[str, Any]) -> dict[str, tuple[float, float]]:
+    """The scoring region as ``{"lat": (south, north), "lon": (west, east)}``."""
+    region = cfg["region"]
+    return {"lat": tuple(region["lat"]), "lon": tuple(region["lon"])}
