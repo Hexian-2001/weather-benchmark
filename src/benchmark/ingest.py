@@ -1,13 +1,13 @@
 """Data ingestion: read reforecast predictions into a canonical Dataset (Phase 1).
 
 Contract:
-- The benchmark **defines** the canonical reforecast format (aligned with WeatherBench 2 /
-  ERA5 conventions); the reforecast step writes it and this module reads it. There is no
-  external ``prediction_store`` to adapt — the Aurora/GraphCast rollout produces an in-memory
-  ``Batch``, so the reforecast step serializes it into the format described here.
-- Layout: one netCDF (``.nc``) or zarr (``.zarr``) per initialization time under
-  ``results/<model_id>/predictions/``. Each file has dims ``(lead_time[, level], lat, lon)``,
-  a scalar ``init_time`` coordinate, and a ``lead_time`` coordinate in hours.
+- The canonical prediction format is the Foehn ``foehn_core.prediction_store``
+  ``unified-forecast-1`` layout: one netCDF per initialization time at
+  ``results/<model>/<variant>/<init>Z/predictions/``, named
+  ``<model>_<variant>_IC<init>_STEPS<n>_<horizon>h_<res>deg_<region>.nc``. Each file carries a
+  ``time`` dimension of valid datetimes, a scalar ``init_time`` coordinate, and a ``lead_time``
+  coordinate in hours. This module walks that tree (recursively) and normalizes it onto the
+  benchmark convention. Legacy flat layouts (``*.nc`` per init) are also accepted.
 - Variable names use WeatherBench 2 long names (``2m_temperature``, ``geopotential`` + ``level``,
   ...). Aurora's short ``Batch`` keys (``2t``, ``10u``, ``msl``, ``z``, ``t``, ...) are mapped
   here via :data:`VARIABLE_ALIASES`.
@@ -86,6 +86,27 @@ def normalize_spatial(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
+def _normalize_lead_time(ds: xr.Dataset) -> xr.Dataset:
+    """Normalize the lead dimension onto a ``lead_time`` coordinate in hours.
+
+    Foehn ``unified-forecast-1`` files use a ``time`` dimension of valid datetimes plus a
+    ``lead_time`` coordinate; the benchmark canonical form uses ``lead_time`` itself as the
+    dimension. This is a no-op on files already in the canonical form.
+    """
+    if "lead_time" in ds.dims:
+        return ds
+    if "time" in ds.dims and "lead_time" in ds.coords:
+        lead = ds["lead_time"].values  # plain array of hours, avoids a name/dim clash
+        ds = ds.drop_vars(["time", "lead_time"])
+        ds = ds.rename({"time": "lead_time"})
+        return ds.assign_coords(lead_time=("lead_time", lead))
+    return ds
+
+
+# Foehn unified filename carries the init time as ``_IC<YYYY-MM-DDTHH>_``.
+_IC_RE = re.compile(r"_IC(\d{4}-\d{2}-\d{2}T\d{2})_")
+
+
 def _init_time(ds: xr.Dataset, path: Path) -> pd.Timestamp:
     """Resolve the initialization time of one prediction file.
 
@@ -95,6 +116,10 @@ def _init_time(ds: xr.Dataset, path: Path) -> pd.Timestamp:
     for name in ("init_time", "forecast_reference_time", "analysis_time"):
         if name in ds.coords and ds[name].size == 1:
             return pd.Timestamp(np.atleast_1d(ds[name].values)[0])
+
+    m = _IC_RE.search(path.name)
+    if m:
+        return pd.Timestamp(m.group(1))
 
     m = re.search(r"(\d{8})(?:[-_T]?(\d{2}))?", path.name)
     if m:
@@ -115,10 +140,14 @@ def _lead_hours(ds: xr.Dataset) -> xr.DataArray:
 
 
 def _discover_files(root: Path) -> List[Path]:
-    """List prediction files (``.nc`` / ``.zarr``) under the predictions root."""
+    """List prediction files (``.nc`` / ``.zarr``) under the predictions root.
+
+    Walks recursively so both the Foehn ``unified-forecast-1`` tree
+    (``<model>/<variant>/<init>Z/predictions/*.nc``) and a flat legacy layout are found.
+    """
     if not root.is_dir():
         raise FileNotFoundError(f"predictions root not found: {root}")
-    files = sorted(root.glob("*.nc")) + sorted(root.glob("*.zarr"))
+    files = sorted(root.rglob("*.nc")) + sorted(root.rglob("*.zarr"))
     if not files:
         raise FileNotFoundError(f"no prediction files (*.nc/*.zarr) under {root}")
     return files
@@ -133,10 +162,12 @@ def load_predictions(
     ``(init_time, lead_time, lat, lon)`` and an ``init_time`` dimension built from the
     per-file ``init_time`` coordinates.
     """
-    root = Path(storage["results_dir"]) / model_id / "predictions"
+    # ``model_id`` may be a nested subpath (e.g. ``aurora/0.25-finetuned`` for the Foehn
+    # results tree); the walk below finds ``predictions/*.nc`` at any depth.
+    root = Path(storage["results_dir"]) / model_id
     datasets = []
     for path in _discover_files(root):
-        ds = canonicalize_variables(normalize_spatial(xr.open_dataset(path)))
+        ds = _normalize_lead_time(canonicalize_variables(normalize_spatial(xr.open_dataset(path))))
         init = _init_time(ds, path)
         if init.year not in years:
             continue
