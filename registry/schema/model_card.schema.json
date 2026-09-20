@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/Hexian-2001/weather-benchmark/registry/schema/model_card.schema.json",
   "title": "WeatherBench Model Card",
-  "description": "模型卡是进入 benchmark 的'入场券'。缺关键字段或违反 unseen-year 声明则拒绝注册。",
+  "description": "The model card is the entry ticket to the benchmark: missing key fields or an unseen-year violation rejects registration.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -12,7 +12,7 @@
   "properties": {
     "model_id": {
       "type": "string",
-      "description": "全局唯一标识",
+      "description": "globally unique identifier",
       "pattern": "^[a-z0-9][a-z0-9._-]*$"
     },
     "name": { "type": "string" },
@@ -108,12 +108,12 @@
         "declaration": { "type": "string" },
         "training_end_year": {
           "type": "integer",
-          "description": "硬性合规约束：必须严格 < 测评起始年（2023）。",
+          "description": "hard compliance constraint: must be strictly < the evaluation start year (2023).",
           "maximum": 2022
         },
         "finetune_end_year": {
           "type": "integer",
-          "description": "微调数据截止年，同样必须 < 2023。",
+          "description": "fine-tune data cutoff year, likewise must be < 2023.",
           "maximum": 2022
         },
         "signed_by": { "type": "string" },

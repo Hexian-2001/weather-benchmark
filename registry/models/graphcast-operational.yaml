@@ -7,7 +7,7 @@ status: registered
 
 architecture:
   type: "Graph neural network (encode–process–decode on icosahedral mesh)"
-  parameters: 36700000        # 约 37M，TODO 以官方口径确认
+  parameters: 36700000        # ~37M; TODO confirm against the official figure
   resolution_deg: 0.25
   time_step_h: 6
   horizon_h: 240
@@ -25,7 +25,7 @@ architecture:
 training:
   origin: pretrained-as-is
   base_checkpoint: deepmind/graphcast
-  base_checkpoint_hash: "sha256:TODO"   # 补实际哈希以进正式存档
+  base_checkpoint_hash: "sha256:TODO"   # fill in the real hash to enter the formal archive
   finetuning:
     enabled: false
   training_data:
@@ -46,13 +46,13 @@ data:
     - specific_humidity
 
 attestation:
-  declaration: "模型及其基础 checkpoint 未使用 2023–2025 任何数据训练/微调"
+  declaration: "the model and its base checkpoint were not trained or fine-tuned on any 2023–2025 data"
   training_end_year: 2017
   finetune_end_year: 2017
   signed_by: "TODO"
   date: "2026-09-20"
 
-owner: "算法团队"
+owner: "Algorithm Team"
 contact: ""
 
 reproducibility:

@@ -1,45 +1,46 @@
-# WeatherBench — 测评范围配置
-# 这份文件是"单一真值、同口径对比"的唯一定义。任何一次 score 都会对这份配置取
-# 哈希，配置一变即产生新的测评行，绝不覆盖历史（不可变存档原则）。
+# WeatherBench-MingYang-Tech — evaluation scope config.
+# This file is the single definition of "one truth, one convention": every score takes a
+# hash of this config; any config change produces a new evaluation row and never
+# overwrites history (immutable archive).
 
 benchmark:
   name: weather-benchmark
   version: "0.1.0"
 
-# ---- 区域（沿用现有 prediction_store 的 China 框）----
+# ---- Region (reuses the existing prediction_store China box) ----
 region:
   name: china
   lat: [15.0, 55.0]
   lon: [70.0, 140.0]
-  # Phase 3 子区域（气象上分区才有意义）：华东沿海 / 华南 / 青藏高原
+  # Phase 3 sub-regions (meteorologically meaningful splits): East China / South China / Tibetan Plateau
   subregions: []
 
-# ---- 空间分辨率 ----
+# ---- Spatial resolution ----
 grid:
-  common_deg: 0.25              # 通用对比网格（两模型公共分母）
-  native_deg: [0.25, 0.1]       # 原生分辨率分类
-  regrid_method: conservative   # 一阶保守重映射（与 WeatherBench 2 一致）
+  common_deg: 0.25              # common comparison grid (denominator for both models)
+  native_deg: [0.25, 0.1]       # native resolution classes
+  regrid_method: conservative   # first-order conservative remapping (consistent with WeatherBench 2)
 
-# ---- 年份 ----
+# ---- Years ----
 years:
-  test: [2023, 2024, 2025]      # 测评年（已定）。所有模型必须 unseen 这些年份
-  climate: [1991, 2020]         # 30 年气候态（ACC 的参照）
+  test: [2023, 2024, 2025]      # evaluation years (locked). All models must be unseen on these
+  climate: [1991, 2020]         # 30-yr climatology (ACC reference)
 
-# ---- 时间 ----
+# ---- Time ----
 time:
-  init_times: ["00", "12"]      # 初始化时次（UTC，WB2 标准）
+  init_times: ["00", "12"]      # initialization times (UTC, WB2 standard)
   horizons:
-    step_6h: { horizon_h: 240, lead_step_h: 6 }   # 主测评：6h 模型 0–240h（40 步）
-    step_1h: { horizon_h: 72, lead_step_h: 1 }    # 降尺度专项：1h 模型 0–72h
-  cross_model_lead_h: 6         # 跨模型统一口径：取 6h 的倍数
+    step_6h: { horizon_h: 240, lead_step_h: 6 }   # primary: 6h models 0–240h (40 steps)
+    step_1h: { horizon_h: 72, lead_step_h: 1 }    # downscaling track: 1h models 0–72h
+  cross_model_lead_h: 6         # unified cross-model convention: multiples of 6h
 
-# ---- 真值 ----
+# ---- Ground truth ----
 truth:
-  primary: ERA5                 # 正式 benchmark 真值（已定）
-  near_real_time: IFS_HRES      # 近实时校验通道（fc0 分析场）
-  cache_grid_deg: 0.25          # 真值统一重网格后落盘缓存
+  primary: ERA5                 # formal benchmark truth (locked)
+  near_real_time: IFS_HRES      # near-real-time check channel (fc0 analysis)
+  cache_grid_deg: 0.25          # truth regridded once and cached
 
-# ---- 变量（沿用 UNIFIED_MAP 统一变量名）----
+# ---- Variables (reuses UNIFIED_MAP names) ----
 variables:
   surface:
     - 2m_temperature
@@ -57,21 +58,21 @@ variables:
     - { name: v_component_of_wind, level: 250 }
     - { name: specific_humidity, level: 850 }
 
-# ---- 指标 ----
+# ---- Metrics ----
 metrics:
-  primary: [RMSE, ACC]          # 纬度加权；ACC 对 30 年气候态
+  primary: [RMSE, ACC]          # latitude-weighted; ACC vs the 30-yr climatology
   auxiliary: [MAE, bias]
   derived: [wind_vector_RMSE, skill_score]
-  acc_skill_threshold: 0.6      # ACC < 0.6 视为无天气学价值（ECMWF 惯例）
+  acc_skill_threshold: 0.6      # ACC < 0.6 = no synoptic skill (ECMWF convention)
 
-# ---- 基线（必须一起跑，否则分数无意义）----
+# ---- Baselines (always run together, otherwise scores are meaningless) ----
 baselines:
   - climatology
   - persistence
   - IFS_HRES
 persistence_hours: 24
 
-# ---- 运行时目录（Pawsey scratch；本仓库只存代码/配置/模型卡）----
+# ---- Runtime directories (Pawsey scratch; this repo holds only code/config/cards) ----
 storage:
   root: /scratch/pawsey0115/hwang4/work_projects/weather-benchmark
   truth_dir: "{root}/data/truth"

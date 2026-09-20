@@ -25,12 +25,12 @@ architecture:
 training:
   origin: pretrained-as-is
   base_checkpoint: microsoft/aurora-0.25-pretrained
-  base_checkpoint_hash: "sha256:TODO"   # 补实际哈希以进正式存档
+  base_checkpoint_hash: "sha256:TODO"   # fill in the real hash to enter the formal archive
   finetuning:
     enabled: false
   training_data:
-    years: [1979, 2021]       # 多源预训练，最新截止约 2021（仍 < 2023，合规）
-    source: "ERA5 + HRES + GFS + CMIP6 + MERRA2 (多源)"
+    years: [1979, 2021]       # multi-source pretraining; latest cutoff ~2021 (still < 2023, compliant)
+    source: "ERA5 + HRES + GFS + CMIP6 + MERRA2 (multi-source)"
 
 data:
   init_source: "IFS HRES fc0 (open data)"
@@ -46,13 +46,13 @@ data:
     - specific_humidity
 
 attestation:
-  declaration: "模型及其基础 checkpoint 未使用 2023–2025 任何数据训练/微调"
+  declaration: "the model and its base checkpoint were not trained or fine-tuned on any 2023–2025 data"
   training_end_year: 2021
   finetune_end_year: 2021
   signed_by: "TODO"
   date: "2026-09-20"
 
-owner: "算法团队"
+owner: "Algorithm Team"
 contact: ""
 
 reproducibility:

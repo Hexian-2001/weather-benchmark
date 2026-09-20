@@ -1,10 +1,11 @@
-"""指标计算：纬度加权 RMSE / ACC / MAE / bias / 风矢量 RMSE / 技巧分（Phase 1）。
+"""Metrics: latitude-weighted RMSE / ACC / MAE / bias / wind-vector RMSE / skill score (Phase 1).
 
-契约（口径与 WeatherBench 2 对齐）：
-- RMSE：主指标，按变量 × 气压层 × lead time，纬度加权；
-- ACC：距平相关系数，相对 30 年气候态；ACC < 0.6 视为无天气学价值（ECMWF 惯例）；
-- 风矢量 RMSE = sqrt(RMSE_u² + RMSE_v²)；
-- skill_score = 1 − RMSE_model / RMSE_baseline。
+Contract (aligned with WeatherBench 2):
+- RMSE: primary, per variable × pressure level × lead time, latitude-weighted;
+- ACC: anomaly correlation coefficient vs the 30-yr climatology; ACC < 0.6 = no synoptic
+  skill (ECMWF convention);
+- wind-vector RMSE = sqrt(RMSE_u² + RMSE_v²);
+- skill_score = 1 − RMSE_model / RMSE_baseline.
 """
 
 from __future__ import annotations
@@ -13,14 +14,14 @@ import numpy as np
 
 
 def latitude_weights(lat: np.ndarray) -> np.ndarray:
-    """纬度权重，与 WeatherBench 2 一致。
+    """Latitude weights, consistent with WeatherBench 2.
 
-    每个纬带权重正比于其面积（sinθ_upper − sinθ_lower），归一化到均值 1。
+    Each latitude band is weighted by its area (sinθ_upper − sinθ_lower), normalized to mean 1.
     """
     lat = np.asarray(lat, dtype=float)
     if lat.ndim != 1:
-        raise ValueError("lat 必须是一维数组")
-    # 以相邻格点中点为边界，两端按边缘半格处理
+        raise ValueError("lat must be a 1-D array")
+    # use the midpoint between neighboring grid points as band edges, half-cell at both ends
     bounds = np.empty(len(lat) + 1)
     bounds[1:-1] = (lat[:-1] + lat[1:]) / 2.0
     spacing = np.diff(lat)
@@ -31,30 +32,30 @@ def latitude_weights(lat: np.ndarray) -> np.ndarray:
 
 
 def rmse(pred, truth, lat=None):
-    """纬度加权 RMSE。"""
-    raise NotImplementedError("metrics.rmse 将在 Phase 1 实现。")
+    """Latitude-weighted RMSE."""
+    raise NotImplementedError("metrics.rmse will be implemented in Phase 1.")
 
 
 def acc(pred, truth, climatology, lat=None):
-    """距平相关系数（相对 30 年气候态）。"""
-    raise NotImplementedError("metrics.acc 将在 Phase 1 实现。")
+    """Anomaly correlation coefficient (vs the 30-yr climatology)."""
+    raise NotImplementedError("metrics.acc will be implemented in Phase 1.")
 
 
 def mae(pred, truth, lat=None):
-    """纬度加权平均绝对误差。"""
-    raise NotImplementedError("metrics.mae 将在 Phase 1 实现。")
+    """Latitude-weighted mean absolute error."""
+    raise NotImplementedError("metrics.mae will be implemented in Phase 1.")
 
 
 def bias(pred, truth, lat=None):
-    """平均误差（系统性偏差）。"""
-    raise NotImplementedError("metrics.bias 将在 Phase 1 实现。")
+    """Mean error (systematic bias)."""
+    raise NotImplementedError("metrics.bias will be implemented in Phase 1.")
 
 
 def wind_vector_rmse(rmse_u, rmse_v):
-    """风矢量 RMSE = sqrt(RMSE_u² + RMSE_v²)。"""
+    """Wind-vector RMSE = sqrt(RMSE_u² + RMSE_v²)."""
     return float(np.sqrt(np.asarray(rmse_u) ** 2 + np.asarray(rmse_v) ** 2))
 
 
 def skill_score(rmse_model, rmse_baseline):
-    """技巧分 = 1 − RMSE_model / RMSE_baseline。"""
+    """Skill score = 1 − RMSE_model / RMSE_baseline."""
     return float(1.0 - np.asarray(rmse_model) / np.asarray(rmse_baseline))

@@ -1,9 +1,11 @@
-"""模型卡注册：schema 校验 + unseen-year 合规 + 可复现性标记。
+"""Model-card registration: schema validation + unseen-year compliance + reproducibility flag.
 
-模型卡是进入 benchmark 的"入场券"：
-- 结构必须符合 ``registry/schema/model_card.schema.json``；
-- ``attestation.training_end_year`` / ``finetune_end_year`` 必须严格小于测评起始年；
-- 缺 ``base_checkpoint_hash`` / ``code_ref`` 则标记为"不可复现"，只允许内部临时测评。
+The model card is the entry ticket to the benchmark:
+- its structure must match ``registry/schema/model_card.schema.json``;
+- ``attestation.training_end_year`` / ``finetune_end_year`` must be strictly earlier
+  than the evaluation start year;
+- missing ``base_checkpoint_hash`` / ``code_ref`` flags the card as non-reproducible,
+  allowing internal trial evaluation only.
 """
 
 from __future__ import annotations
@@ -24,7 +26,7 @@ MODELS_DIR = _REPO_ROOT / "registry" / "models"
 
 @dataclass
 class Registration:
-    """一次注册/校验的结果。"""
+    """Summary of one registration/validation run."""
 
     model_id: str
     schema_valid: bool
@@ -43,7 +45,7 @@ def load_schema() -> Dict[str, Any]:
 
 
 def _stringify(obj: Any) -> Any:
-    """把 PyYAML 自动解析出的 date/datetime 还原为 ISO 字符串（JSON Schema 要求 string）。"""
+    """Convert PyYAML's auto-parsed date/datetime back to ISO strings (JSON Schema wants strings)."""
     if isinstance(obj, (_dt.datetime, _dt.date)):
         return obj.isoformat()
     if isinstance(obj, dict):
@@ -59,7 +61,7 @@ def load_model_card(path: Path | str) -> Dict[str, Any]:
 
 
 def validate_schema(card: Dict[str, Any], schema: Dict[str, Any] | None = None) -> List[str]:
-    """返回 schema 违规列表；空列表表示结构合法。"""
+    """Return schema violations; an empty list means the structure is valid."""
     schema = schema or load_schema()
     errors = []
     for err in sorted(jsonschema.Draft7Validator(schema).iter_errors(card), key=str):
@@ -68,34 +70,34 @@ def validate_schema(card: Dict[str, Any], schema: Dict[str, Any] | None = None) 
 
 
 def check_compliance(card: Dict[str, Any], start_year: int) -> List[str]:
-    """unseen-year 合规校验：训练/微调截止年必须 < 测评起始年。"""
+    """Unseen-year compliance: training/fine-tune end years must be < the evaluation start year."""
     issues = []
     attest = card.get("attestation", {})
     for key in ("training_end_year", "finetune_end_year"):
         end = attest.get(key)
         if end is None:
-            issues.append(f"attestation.{key} 缺失")
+            issues.append(f"attestation.{key} is missing")
         elif int(end) >= start_year:
             issues.append(
-                f"attestation.{key}={end} 违反 unseen-year（必须 < {start_year}）"
+                f"attestation.{key}={end} violates unseen-year (must be < {start_year})"
             )
     return issues
 
 
 def check_reproducibility(card: Dict[str, Any]) -> List[str]:
-    """可复现性标记：缺 checkpoint 哈希或代码引用则降级为'内部临时测评'。"""
+    """Reproducibility flag: missing checkpoint hash or code ref → internal-trial only."""
     issues = []
     training = card.get("training", {})
     repro = card.get("reproducibility", {})
     if not training.get("base_checkpoint_hash") or "TODO" in str(training.get("base_checkpoint_hash")):
-        issues.append("缺 base_checkpoint_hash，标记为'不可复现'")
+        issues.append("missing base_checkpoint_hash (flagged non-reproducible)")
     if not repro.get("code_ref") or "TODO" in str(repro.get("code_ref")):
-        issues.append("缺 code_ref，标记为'不可复现'")
+        issues.append("missing code_ref (flagged non-reproducible)")
     return issues
 
 
 def register(path: Path | str, start_year: int) -> Registration:
-    """加载并校验一张模型卡，返回 Registration 汇总。"""
+    """Load and validate a model card, returning a Registration summary."""
     card = load_model_card(path)
     schema_issues = validate_schema(card)
     compliance_issues = check_compliance(card, start_year) if not schema_issues else []
