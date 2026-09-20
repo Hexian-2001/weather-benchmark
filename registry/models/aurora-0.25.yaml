@@ -1,0 +1,62 @@
+model_id: aurora-0.25
+name: Aurora
+family: aurora
+variant: "0.25"
+version: 1.0.0
+status: registered
+
+architecture:
+  type: "3D Swin Transformer (perceiver-based foundation model)"
+  parameters: 1300000000
+  resolution_deg: 0.25
+  time_step_h: 6
+  horizon_h: 240
+  variables:
+    - 2m_temperature
+    - 10m_u_component_of_wind
+    - 10m_v_component_of_wind
+    - mean_sea_level_pressure
+    - geopotential
+    - temperature
+    - u_component_of_wind
+    - v_component_of_wind
+    - specific_humidity
+
+training:
+  origin: pretrained-as-is
+  base_checkpoint: microsoft/aurora-0.25-pretrained
+  base_checkpoint_hash: "sha256:TODO"   # 补实际哈希以进正式存档
+  finetuning:
+    enabled: false
+  training_data:
+    years: [1979, 2021]       # 多源预训练，最新截止约 2021（仍 < 2023，合规）
+    source: "ERA5 + HRES + GFS + CMIP6 + MERRA2 (多源)"
+
+data:
+  init_source: "IFS HRES fc0 (open data)"
+  input_variables:
+    - 2m_temperature
+    - 10m_u_component_of_wind
+    - 10m_v_component_of_wind
+    - mean_sea_level_pressure
+    - geopotential
+    - temperature
+    - u_component_of_wind
+    - v_component_of_wind
+    - specific_humidity
+
+attestation:
+  declaration: "模型及其基础 checkpoint 未使用 2023–2025 任何数据训练/微调"
+  training_end_year: 2021
+  finetune_end_year: 2021
+  signed_by: "TODO"
+  date: "2026-09-20"
+
+owner: "算法团队"
+contact: ""
+
+reproducibility:
+  conda_env: "aurora-gpu (spec hash TODO)"
+  code_ref: "TODO"
+  seed: null
+  hardware: "Setonix MI250X"

@@ -1,0 +1,135 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Hexian-2001/weather-benchmark/registry/schema/model_card.schema.json",
+  "title": "WeatherBench Model Card",
+  "description": "模型卡是进入 benchmark 的'入场券'。缺关键字段或违反 unseen-year 声明则拒绝注册。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "model_id", "name", "family", "version", "status",
+    "architecture", "training", "data", "attestation", "owner"
+  ],
+  "properties": {
+    "model_id": {
+      "type": "string",
+      "description": "全局唯一标识",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "name": { "type": "string" },
+    "family": { "type": "string" },
+    "variant": { "type": ["string", "null"] },
+    "version": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["registered", "evaluating", "archived"],
+      "default": "registered"
+    },
+    "owner": { "type": "string" },
+    "contact": { "type": ["string", "null"] },
+
+    "architecture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "parameters", "resolution_deg", "time_step_h", "horizon_h", "variables"],
+      "properties": {
+        "type": { "type": "string" },
+        "parameters": { "type": "number", "minimum": 0 },
+        "resolution_deg": { "type": "number", "enum": [0.25, 0.1] },
+        "time_step_h": { "type": "number", "enum": [1, 6] },
+        "horizon_h": { "type": "number", "minimum": 1 },
+        "variables": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      }
+    },
+
+    "training": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "base_checkpoint", "training_data"],
+      "properties": {
+        "origin": {
+          "type": "string",
+          "enum": ["from-scratch", "finetuned", "pretrained-as-is"]
+        },
+        "base_checkpoint": { "type": ["string", "null"] },
+        "base_checkpoint_hash": { "type": ["string", "null"] },
+        "finetuning": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "data_years": { "type": "array", "items": { "type": "integer" } },
+            "data_source": { "type": "string" },
+            "epochs": { "type": "number" },
+            "hardware": { "type": "string" },
+            "wall_time_h": { "type": "number" }
+          }
+        },
+        "training_data": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["years", "source"],
+          "properties": {
+            "years": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "type": "integer" }
+            },
+            "source": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["init_source"],
+      "properties": {
+        "init_source": { "type": "string" },
+        "input_variables": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      }
+    },
+
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declaration", "training_end_year", "finetune_end_year", "signed_by", "date"],
+      "properties": {
+        "declaration": { "type": "string" },
+        "training_end_year": {
+          "type": "integer",
+          "description": "硬性合规约束：必须严格 < 测评起始年（2023）。",
+          "maximum": 2022
+        },
+        "finetune_end_year": {
+          "type": "integer",
+          "description": "微调数据截止年，同样必须 < 2023。",
+          "maximum": 2022
+        },
+        "signed_by": { "type": "string" },
+        "date": { "type": "string", "format": "date" }
+      }
+    },
+
+    "reproducibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "conda_env": { "type": ["string", "null"] },
+        "code_ref": { "type": ["string", "null"] },
+        "seed": { "type": ["integer", "null"] },
+        "hardware": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

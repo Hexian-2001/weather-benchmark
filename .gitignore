@@ -1,0 +1,40 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# ---- Data & outputs (large, live on Pawsey scratch — never in git) ----
+data/
+scores/
+*.nc
+*.zarr
+predictions/
+results/
+*.grib
+*.grb
+*.idx
+
+# ---- Jupyter / IDE ----
+.ipynb_checkpoints/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---- OS / misc ----
+.DS_Store
+Thumbs.db
+*.log
+*.out
+*.err
+
+# ---- Local overrides ----
+*.local.yaml
+.condarc

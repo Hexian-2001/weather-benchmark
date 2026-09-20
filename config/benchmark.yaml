@@ -1,0 +1,81 @@
+# WeatherBench — 测评范围配置
+# 这份文件是"单一真值、同口径对比"的唯一定义。任何一次 score 都会对这份配置取
+# 哈希，配置一变即产生新的测评行，绝不覆盖历史（不可变存档原则）。
+
+benchmark:
+  name: weather-benchmark
+  version: "0.1.0"
+
+# ---- 区域（沿用现有 prediction_store 的 China 框）----
+region:
+  name: china
+  lat: [15.0, 55.0]
+  lon: [70.0, 140.0]
+  # Phase 3 子区域（气象上分区才有意义）：华东沿海 / 华南 / 青藏高原
+  subregions: []
+
+# ---- 空间分辨率 ----
+grid:
+  common_deg: 0.25              # 通用对比网格（两模型公共分母）
+  native_deg: [0.25, 0.1]       # 原生分辨率分类
+  regrid_method: conservative   # 一阶保守重映射（与 WeatherBench 2 一致）
+
+# ---- 年份 ----
+years:
+  test: [2023, 2024, 2025]      # 测评年（已定）。所有模型必须 unseen 这些年份
+  climate: [1991, 2020]         # 30 年气候态（ACC 的参照）
+
+# ---- 时间 ----
+time:
+  init_times: ["00", "12"]      # 初始化时次（UTC，WB2 标准）
+  horizons:
+    step_6h: { horizon_h: 240, lead_step_h: 6 }   # 主测评：6h 模型 0–240h（40 步）
+    step_1h: { horizon_h: 72, lead_step_h: 1 }    # 降尺度专项：1h 模型 0–72h
+  cross_model_lead_h: 6         # 跨模型统一口径：取 6h 的倍数
+
+# ---- 真值 ----
+truth:
+  primary: ERA5                 # 正式 benchmark 真值（已定）
+  near_real_time: IFS_HRES      # 近实时校验通道（fc0 分析场）
+  cache_grid_deg: 0.25          # 真值统一重网格后落盘缓存
+
+# ---- 变量（沿用 UNIFIED_MAP 统一变量名）----
+variables:
+  surface:
+    - 2m_temperature
+    - 10m_u_component_of_wind
+    - 10m_v_component_of_wind
+    - mean_sea_level_pressure
+  pressure:
+    - { name: geopotential, level: 500 }
+    - { name: temperature, level: 850 }
+    - { name: temperature, level: 500 }
+    - { name: temperature, level: 250 }
+    - { name: u_component_of_wind, level: 850 }
+    - { name: v_component_of_wind, level: 850 }
+    - { name: u_component_of_wind, level: 250 }
+    - { name: v_component_of_wind, level: 250 }
+    - { name: specific_humidity, level: 850 }
+
+# ---- 指标 ----
+metrics:
+  primary: [RMSE, ACC]          # 纬度加权；ACC 对 30 年气候态
+  auxiliary: [MAE, bias]
+  derived: [wind_vector_RMSE, skill_score]
+  acc_skill_threshold: 0.6      # ACC < 0.6 视为无天气学价值（ECMWF 惯例）
+
+# ---- 基线（必须一起跑，否则分数无意义）----
+baselines:
+  - climatology
+  - persistence
+  - IFS_HRES
+persistence_hours: 24
+
+# ---- 运行时目录（Pawsey scratch；本仓库只存代码/配置/模型卡）----
+storage:
+  root: /scratch/pawsey0115/hwang4/work_projects/weather-benchmark
+  truth_dir: "{root}/data/truth"
+  climatology_dir: "{root}/data/climatology"
+  baselines_dir: "{root}/data/baselines"
+  results_dir: "{root}/results"
+  scores_dir: "{root}/scores"

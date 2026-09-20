@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "weather-benchmark"
+version = "0.1.0"
+description = "A standardized, reusable benchmark platform for internal weather ML model evaluation."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Hexian Wang", email = "wanghexian@mywind.com.cn" }]
+keywords = ["weather", "benchmark", "era5", "graphcast", "aurora", "verification", "skill-score"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+]
+dependencies = [
+    "numpy>=1.24",
+    "xarray>=2023.1",
+    "pandas>=2.0",
+    "scipy>=1.10",
+    "pyyaml>=6.0",
+    "jsonschema>=4.17",
+]
+
+[project.optional-dependencies]
+io = ["netcdf4>=1.6", "dask[array]>=2023.1", "cfgrib>=0.9"]
+dev = ["pytest>=7.0", "ruff>=0.1"]
+
+[project.scripts]
+benchmark = "benchmark.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

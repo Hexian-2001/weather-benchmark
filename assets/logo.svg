@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="WeatherBench logo">
+  <defs>
+    <linearGradient id="wb-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e3a8a"/>
+      <stop offset="0.55" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="wb-shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- background -->
+  <rect x="6" y="6" width="116" height="116" rx="30" fill="url(#wb-bg)"/>
+  <rect x="6" y="6" width="116" height="56" rx="30" fill="url(#wb-shine)"/>
+
+  <!-- globe -->
+  <circle cx="63" cy="61" r="33" fill="none" stroke="#ffffff" stroke-opacity="0.92" stroke-width="2.6"/>
+  <ellipse cx="63" cy="61" rx="14" ry="33" fill="none" stroke="#ffffff" stroke-opacity="0.34" stroke-width="1.5"/>
+  <ellipse cx="63" cy="61" rx="33" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.34" stroke-width="1.5"/>
+  <line x1="63" y1="28" x2="63" y2="94" stroke="#ffffff" stroke-opacity="0.34" stroke-width="1.5"/>
+  <line x1="30" y1="61" x2="96" y2="61" stroke="#ffffff" stroke-opacity="0.34" stroke-width="1.5"/>
+
+  <!-- benchmark region accent (China box) -->
+  <rect x="56" y="37" width="16" height="12" rx="2" fill="#fbbf24" fill-opacity="0.95"/>
+
+  <!-- verified / benchmarked badge -->
+  <circle cx="90" cy="90" r="17" fill="#10b981"/>
+  <path d="M83 90 l5.5 5.5 L99 83" fill="none" stroke="#ffffff" stroke-width="3.4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
