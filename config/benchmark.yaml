@@ -17,7 +17,8 @@ region:
 
 # ---- Spatial resolution ----
 grid:
-  common_deg: 0.25              # common comparison grid (denominator for both models)
+  primary_deg: 0.1              # PRIMARY: score 0.1° predictions at native resolution
+  common_deg: 0.25              # cross-model comparison grid (0.1° also regridded onto it)
   native_deg: [0.25, 0.1]       # native resolution classes
   regrid_method: conservative   # first-order conservative remapping (consistent with WeatherBench 2)
 
@@ -30,15 +31,19 @@ years:
 time:
   init_times: ["00", "12"]      # initialization times (UTC, WB2 standard)
   horizons:
-    step_6h: { horizon_h: 240, lead_step_h: 6 }   # primary: 6h models 0–240h (40 steps)
-    step_1h: { horizon_h: 72, lead_step_h: 1 }    # downscaling track: 1h models 0–72h
+    step_1h: { horizon_h: 72, lead_step_h: 1 }    # PRIMARY: 1h downscaling track 0–72h
+    step_6h: { horizon_h: 240, lead_step_h: 6 }   # cross-model comparison 0–240h (40 steps)
   cross_model_lead_h: 6         # unified cross-model convention: multiples of 6h
 
 # ---- Ground truth ----
+# ERA5 is natively 0.25°; there is NO 0.1° ERA5 product. 0.1° scoring therefore uses the
+# IFS HRES fc0 analysis (~9 km ≈ 0.1°). ERA5-Land (0.1°) is an optional surface-only supplement.
 truth:
-  primary: ERA5                 # formal benchmark truth (locked)
+  primary: ERA5                 # 0.25° truth (1h native; 6h = subset) — formal benchmark
+  primary_010: IFS_HRES         # 0.1° truth (fc0 analysis) — the only 0.1° pressure-level source
+  era5_land_010: ERA5-Land      # optional: 0.1° surface-only (land) supplement
   near_real_time: IFS_HRES      # near-real-time check channel (fc0 analysis)
-  cache_grid_deg: 0.25          # truth regridded once and cached
+  cache_grid_deg: 0.25          # 0.25° truth regridded once and cached
 
 # ---- Variables (reuses UNIFIED_MAP names) ----
 variables:

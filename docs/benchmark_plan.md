@@ -71,7 +71,7 @@ lon: 70.0 – 140.0°E
 | **1h models** (downscaling target) | **0–72h** | 1,2,…,72h | temporal downscaling track |
 | Cross-model comparison | — | **multiples of 6h** (6,12,…,72h) | unified convention |
 
-> The primary track uses 6h steps over 0–240h, identical to the existing pipeline's 40 steps; 1h is a separate downscaling track, not mandatory for all models.
+> **Priority (updated 2026-09-20)**: the team's current goal is downscaling, so the **1h / 0.1° track (0–72h) is the primary** evaluation target; the 6h / 0.25° track (0–240h) is retained as the cross-model comparison baseline.
 
 ### 3.4 Variables
 
@@ -130,6 +130,8 @@ Two candidates (locked, 2026-09-18):
 | **B. IFS HRES analysis (fc0)** | exactly your pipeline's initial-condition source, consistent convention, near-real-time | not a reanalysis, no published baseline | daily operational quick check |
 
 **Locked**: **A primary (ERA5)**, B as the near-real-time quick-check channel. Truth is uniformly regridded to the 0.25° reference grid and cached, avoiding repeated downloads per score.
+
+> ⚠️ **0.1° truth (updated 2026-09-20)**: ERA5 is natively **0.25°** — there is no 0.1° ERA5 product. Since the current focus is scoring **0.1° 1h** downscaling predictions, the 0.1° truth is the **IFS HRES `fc0` analysis (~9 km ≈ 0.1°)** for all variables, with **ERA5-Land (0.1°)** as an optional surface-only (land) supplement. This elevates IFS HRES from "near-real-time check" to "primary truth for the 0.1° track".
 
 ---
 
