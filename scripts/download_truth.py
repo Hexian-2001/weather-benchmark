@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import time
 import zipfile
 
 import cdsapi
@@ -141,6 +142,25 @@ def is_complete(nc_path: str, sha_path: str) -> bool:
     return sha256_of(nc_path) == expected
 
 
+def _retrieve(client, dataset: str, request: dict, target: str, attempts: int = 6) -> None:
+    """Retrieve with retry/backoff so transient CDS throttling (parallel jobs) is non-fatal.
+
+    A genuine cost-limit refusal is not retried forever, but parallel month-jobs can hit
+    transient "too many requests"/5xx/network errors; those clear as other requests finish.
+    """
+    delay = 30
+    for attempt in range(1, attempts + 1):
+        try:
+            client.retrieve(dataset, request, target)
+            return
+        except Exception as exc:
+            if attempt == attempts:
+                raise
+            print(f"  retry {attempt}/{attempts - 1} in {delay}s: {exc}", flush=True)
+            time.sleep(delay)
+            delay *= 2
+
+
 def download_window(client, name: str, spec: dict, year: int, month: str,
                     days: list[str], outdir: str) -> None:
     out_dir = os.path.join(outdir, name, str(year))
@@ -158,7 +178,7 @@ def download_window(client, name: str, spec: dict, year: int, month: str,
         os.remove(tmp)
 
     print(f"request {label} ...", flush=True)
-    client.retrieve(spec["dataset"], build_request(spec, year, month, days), tmp)
+    _retrieve(client, spec["dataset"], build_request(spec, year, month, days), tmp)
     _unzip_if_needed(tmp)
 
     os.replace(tmp, nc_path)
